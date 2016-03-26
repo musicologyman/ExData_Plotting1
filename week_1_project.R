@@ -13,7 +13,8 @@ wc <- try(system2("wc", c("-l", datafile), stdout=T))
 # Use a regular expression to find the numeric values
 matchResult <- regexpr("\\d+", wc)
 # Extract the number of lines from the result and convert to a numeric value
-numrows <- regexpr(wc, matchResult) %>% as.numeric
+numrows <- substr(wc, matchResult, matchResult + attr(matchResult, "match.length")) %>% 
+  as.integer()
 
 # Now, read the first few rows of the data file in order to extract colClasses
 toprows <- read.table(datafile, nrows = 20, header = T, sep=";", stringsAsFactors = F)
@@ -33,3 +34,14 @@ rowsize <- read.table(datafile, header=T, sep=";", colClasses = colClasses, nrow
 #Now we can calculate the approximate size of the data in memory:
 datasize <- rowsize * numrows
 
+# Get the amount of memory on the system (for Mac OS X)
+
+pattern <- "(?<=Primary memory available:\\s).+(?=\\sgigabytes)"
+
+# available memory in bytes:
+available_memory <- system2("hostinfo", stdout=TRUE) %>%            
+  (function(x) x[grepl(pattern, x, perl = TRUE)]) %>%
+  (function(x) list(input = x, match = regexpr(pattern, x, perl=TRUE))) %>%
+  (function(x) substr(x$input, x$match, attr(x$match, "match.length") + x$match )) %>%
+  (function (x) as.numeric(x) * (1024 ^ 3))
+  
