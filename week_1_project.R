@@ -23,7 +23,6 @@ classes <- lapply(toprows[1, ], class)
 
 # We can use the list of classes as a basis for the colClasses argument when 
 # we read the table.
-# colClasses <- c("character", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric")
 colClasses <- unlist(classes, use.names =  FALSE)
 
 # Once we know the column classes, we can re-read the first row to get the object sizes of each column
@@ -35,13 +34,14 @@ rowsize <- read.table(datafile, header=T, sep=";", colClasses = colClasses, nrow
 datasize <- rowsize * numrows
 
 # Get the amount of memory on the system (for Mac OS X)
-
-pattern <- "(?<=Primary memory available:\\s).+(?=\\sgigabytes)"
-
-# available memory in bytes:
-available_memory <- system2("hostinfo", stdout=TRUE) %>%            
-  (function(x) x[grepl(pattern, x, perl = TRUE)]) %>%
-  (function(x) list(input = x, match = regexpr(pattern, x, perl=TRUE))) %>%
-  (function(x) substr(x$input, x$match, attr(x$match, "match.length") + x$match )) %>%
-  (function (x) as.numeric(x) * (1024 ^ 3))
+get_available_memory = function() {
+  pattern <- "(?<=Primary memory available:\\s).+(?=\\sgigabytes)"
+  
+  # available memory in bytes:
+  try(system2("hostinfo", stdout=TRUE)) %>%            
+    (function(x) x[grepl(pattern, x, perl = TRUE)]) %>%
+    (function(x) list(input = x, match = regexpr(pattern, x, perl=TRUE))) %>%
+    (function(x) substr(x$input, x$match, attr(x$match, "match.length") + x$match )) %>%
+    (function (x) as.numeric(x) * (1024 ^ 3))
+}
   
