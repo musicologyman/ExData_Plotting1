@@ -4,20 +4,26 @@ library(magrittr)     # so we can use the pipe operator %>%
 # set parameters
 wd <- "~/Repos/exploratory-data-analysis/data"
 datafile <- "household_power_consumption.txt"
+min_rows_to_browse <- 20
+max_fraction_of_allowed_memory <- 0.5
 
 setwd(wd)
 
-# First, estimate the size of the data set
-# Get the number of lines in the data set
-wc <- try(system2("wc", c("-l", datafile), stdout=T))
-# Use a regular expression to find the numeric values
-matchResult <- regexpr("\\d+", wc)
-# Extract the number of lines from the result and convert to a numeric value
-numrows <- substr(wc, matchResult, matchResult + attr(matchResult, "match.length")) %>% 
-  as.integer()
+# Get the number of rows in an input file (for Mac OS X and other Unix-based systems)
+get_num_rows <- function(input_file) {
+  try(system2("wc", c ("-l", input_file), stdout=T)) %>% 
+    (function(x) list(input = x, match = regexpr("\\d+",x))) %>% 
+    (function(x) substr(x$input, x$match, attr(x$match, "match.length") + x$match )) %>%
+    as.integer()
+}
+
+num_rows <- get_num_rows(datafile)
+
+if (num_rows >= min_rows_to_browse) 
+  stop(paste("The dataset does not include at least ", min_rows_to_browse, "rows."))
 
 # Now, read the first few rows of the data file in order to extract colClasses
-toprows <- read.table(datafile, nrows = 20, header = T, sep=";", stringsAsFactors = F)
+toprows <- read.table(datafile, nrows = min_rows_to_browse, header = T, sep=";", stringsAsFactors = F)
 # Now, use the first row to get the column classes
 classes <- lapply(toprows[1, ], class)
 
@@ -26,7 +32,7 @@ classes <- lapply(toprows[1, ], class)
 colClasses <- unlist(classes, use.names =  FALSE)
 
 # Once we know the column classes, we can re-read the first row to get the object sizes of each column
-rowsize <- read.table(datafile, header=T, sep=";", colClasses = colClasses, nrows = 20) %>% 
+rowsize <- read.table(datafile, header=T, sep=";", colClasses = colClasses, nrows = min_rows_to_browse) %>% 
   (function(x) sapply(x[1,], object.size)) %>%
   sum
 
@@ -42,6 +48,11 @@ get_available_memory = function() {
     (function(x) x[grepl(pattern, x, perl = TRUE)]) %>%
     (function(x) list(input = x, match = regexpr(pattern, x, perl=TRUE))) %>%
     (function(x) substr(x$input, x$match, attr(x$match, "match.length") + x$match )) %>%
-    (function (x) as.numeric(x) * (1024 ^ 3))
+    (function (x) as.integer(x) * (1024 ^ 3))
 }
-  
+
+if ( datasize / available_memory > max_fraction_of_allowed_memory )
+  stop("Not enough memory to complete the operation")
+
+
+
