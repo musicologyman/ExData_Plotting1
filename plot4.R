@@ -94,7 +94,7 @@ dt[[2]] <- paste(dt[[1]] %>% as.character, dt[[2]]) %>% (function(s) strptime(s,
 # lines(x = dt$Time, y = dt$Sub_metering_3, col = "blue")
 # legend(legend = c("Sub_metering_1", "Sub_metering_2", "Sub_Metering_3"), x = "topright", lty=1, col=c("gray", "red", "blue"))
 
-par(mfrow=c(2,2), mar=c(1,1,1,1), pty="m")
+par(mfrow=c(2,2), mar=c(1,1,1,1), pty="m", oma=c(1,1,1,1))
 with(dt, { 
           par(mar=rep(4,4))
           plot(x = Time, 
