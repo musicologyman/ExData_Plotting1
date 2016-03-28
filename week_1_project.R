@@ -66,4 +66,21 @@ get_date_filter <- function(){
     (function (x) x %in% filter_dates)
   }
 
+# Now use the date filter to subset the entire data set
+date_filter <- get_date_filter()
 
+# Read the data table using fread. Setting column classes to "character" to
+# prevent warning about rows in which a character is found in where its
+# column class had been inferred to be something else.
+dt <- fread(datafile, data.table = TRUE, colClasses = rep("character", 9))
+
+# Filter by the dates of interest
+# convert the first column to a Date
+dt$Date <- as.Date(dt$Date, "%d/%m/%Y")
+# set the filter dates
+filter_dates <- c(as.Date("2007-02-01"), as.Date("2007-02-02"))
+filtered_table <- dt[dt$Date %in% filter_dates]
+for (k in 3:9) {
+  filtered_table[[k]] <- as.numeric(filtered_table[[k]])
+}
+filtered_table[[2]] <- paste(filtered_table[[1]] %>% as.character, filtered_table[[2]]) %>% (function(s) strptime(s, "%Y-%m-%d %H:%M:%S"))
