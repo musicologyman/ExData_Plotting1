@@ -19,7 +19,7 @@ get_num_rows <- function(input_file) {
 
 num_rows <- get_num_rows(datafile)
 
-if (num_rows >= min_rows_to_browse) 
+if (num_rows < min_rows_to_browse) 
   stop(paste("The dataset does not include at least ", min_rows_to_browse, "rows."))
 
 # Now, read the first few rows of the data file in order to extract colClasses
@@ -37,7 +37,7 @@ rowsize <- read.table(datafile, header=T, sep=";", colClasses = colClasses, nrow
   sum
 
 #Now we can calculate the approximate size of the data in memory:
-datasize <- rowsize * numrows
+datasize <- rowsize * num_rows
 
 # Get the amount of memory on the system (for Mac OS X)
 get_available_memory = function() {
@@ -51,8 +51,19 @@ get_available_memory = function() {
     (function (x) as.integer(x) * (1024 ^ 3))
 }
 
-if ( datasize / available_memory > max_fraction_of_allowed_memory )
+if ( datasize / get_available_memory() > max_fraction_of_allowed_memory )
   stop("Not enough memory to complete the operation")
 
+# Since we're going to subset the dataset on the dates
+# 2007-02-01 and 2007-02-02, let's first get a vector
+# we can use to limit the number of rows we actually read.
+get_date_filter <- function(){
+  filter_dates <- c(as.Date("2007-02-01"), as.Date("2007-02-02"))
+  
+  read.table(datafile, header=TRUE, sep=";",
+             colClasses=c("character", rep(NA, 8))) %>% 
+    (function (x) as.Date(x$Date, "%d/%m/%Y")) %>%
+    (function (x) x %in% filter_dates)
+  }
 
 
